@@ -5,4 +5,3 @@ Implement a photo album web application, that can be searched using natural lang
 
 ![image](https://user-images.githubusercontent.com/55186660/162592481-cdf28765-e7f6-41f7-b170-b17c48947536.png)
 
-1n
