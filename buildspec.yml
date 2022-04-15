@@ -7,9 +7,9 @@ phases:
   commands:
    - sam build
    - export BUCKET=artifact-bucket-cc
-   - sam package --template-file template.yml --s3-bucket $BUCKET --output-template-file outputtemplate.yml
+   - sam package --template-file template.yml --s3-bucket $BUCKET --output-template-file outputtemplate.yaml
 artifacts:
  type: zip
  files:
   - template.yml
-  - outputtemplate.yml
+  - outputtemplate.yaml
