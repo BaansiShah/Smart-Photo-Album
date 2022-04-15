@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css">
+<link rel="stylesheet" href="https://cdn.shoelace.style/1.0.0-beta24/shoelace.css">
+<link rel="stylesheet" href="styles.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body {
+  margin: 0 auto;
+  max-width: 1200px;
+  padding: 0 20px;
+  overflow:hidden
+}
+
+#chatArea {
+    overflow-y: auto;
+    position: relative;
+    width: 1200px;
+    top: 67.80px;
+    bottom: 100px;
+}
+.container {
+  margin: 0;
+  position: absolute;
+  right: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
+</style>
+</head>
+<body style="color: white;">
+
+ <header style="position: fixed;background-color:black;padding: 0 20px;width: 840px;font-family:'Courier New', cursive; height: 50px;"><h2>Smart Photo Gallery</h2>
+ </header>
+
+<div id="chatArea" style="background-image: url('https://wallpaperaccess.com/full/1467776.jpg'">
+    <form>
+        <label for="transcript" style="font-family:'Courier New', cursive, sans-serif; font-size: 25px;">Type Below or Speak:</label>
+        <input type="text" id="transcript" name="transcript" size="100">
+        <middle>
+        <div class="container">
+          <div class="col">
+              <button id="start-button" class="button-xl" title="Start Transcription">
+                  <i class="fa fa-microphone"></i> Start
+              </button>
+              <button id="stop-button" class="button-xl" title="Stop Transcription" disabled="true"><i
+                      class="fa fa-stop-circle"></i> Stop
+              </button>
+              <button id="reset-button" class="button-xl button-secondary" title="Clear Transcript"> 
+                  Clear Transcript
+              </button>
+          </div>
+      </div>
+    </middle>
+        <input type="button" id="submit" style="height:50px;width:108px" value="submit" onclick="submitChat()">
+        <br>
+        <br>
+        <label for="img">Select image:</label>
+        <input type="file" id="img_uploaded" name="img_uploaded" accept="image/jpeg" ">
+        <br>
+        <br>
+        <br>
+        <br>
+        <label for="img">Custom Labels:(Optional)</label>
+        <br>
+        
+        <input type="text" id="customlabels" name="customlabels" size="150">
+        <br>
+
+        <p style="background-color: transparent;display: block;color: red;" id="error" name="error" ></p>
+        <br>
+        
+        <input type="button" id="uploadimage" style="height:50px;width:108px" value="UploadImage" onclick="submitUpload()">
+    </form>
+    <br>
+    <div id="img_area">
+      
+    </div> 
+</div>
+</body>
+<script id="imgTest" type="text/javascript" src="lib/axios/dist/axios.standalone.js"></script>
+<script type="text/javascript" src="lib/CryptoJS/rollups/hmac-sha256.js"></script>
+<script type="text/javascript" src="lib/CryptoJS/rollups/sha256.js"></script>
+<script type="text/javascript" src="lib/CryptoJS/components/hmac.js"></script>
+<script type="text/javascript" src="lib/CryptoJS/components/enc-base64.js"></script>
+<script type="text/javascript" src="lib/url-template/url-template.js"></script>
+<script type="text/javascript" src="lib/apiGatewayCore/sigV4Client.js"></script>
+<script type="text/javascript" src="lib/apiGatewayCore/apiGatewayClient.js"></script>
+<script type="text/javascript" src="lib/apiGatewayCore/simpleHttpClient.js"></script>
+<script type="text/javascript" src="lib/apiGatewayCore/utils.js"></script>
+<script type="text/javascript" src="apigClient.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="dist/main.js"></script>
+<script>
+
+function submitChat(e) {
+  var search_query = document.getElementById("transcript").value;
+
+  var params = {
+    headers: {
+      param0: 'Accept:application/json',
+    },
+    'search_query': search_query
+  };
+
+  // var additionalParams = {
+  //   //If there are any unmodeled query parameters or headers that need to be sent with the request you can add them here
+  //   queryParams: {
+  //       'q': search_query,
+  //   },
+  // };
+  var body = JSON.stringify({"search_query":search_query})
+  var apigClient = apigClientFactory.newClient();
+    console.log("1")
+    apigClient.searchGet(params,body)
+    .then(function(result){
+      console.log(result['data']['body']);
+      json = JSON.parse(result['data']['body'])
+      // alert('Passed')
+      console.log(json)
+      botResponse = json['files']
+      console.log('bot response')
+      console.log(botResponse)
+      if(botResponse.length>0)
+      {
+        img_area = document.getElementById('img_area')
+        for (let step = 0; step < botResponse.length; step++) {
+          // Runs 5 times, with values of step 0 through 4.
+          var userImg = document.createElement("IMG");
+          userImg.src = "http://s3.amazonaws.com/storephoto9/"+botResponse[step];
+          userImg.alt = "User's Photo";
+          userImg.style.width = "250px"
+          userImg.style.height = "250px"
+          img_area.appendChild(userImg)
+        }
+
+      }
+      else{
+        img_area = document.getElementById('img_area')
+        img_area.innerHTML += 'No Photos';
+      }
+    }).catch( function(result){
+      console.log(JSON.stringify(result))
+    });
+
+}
+
+
+function submitUpload(evt) {
+  alert("called")
+  var filesSelected = document.getElementById("img_uploaded").files;
+  var labels = document.getElementById("customlabels").value;
+  var error = document.getElementById("error");
+  console.log(labels)
+  if(labels){
+
+    var str_array = labels.split(',');
+
+    for(var i = 0; i < str_array.length; i++) {
+      if(str_array[i] && !(/^[a-zA-Z]+$/.test(str_array[i]))){
+        error.textContent="Invalid custom labels format."
+        return
+      }
+    }
+  }else{
+    labels=""
+  }
+  error.textContent=""
+
+
+    if (filesSelected.length > 0) {
+      var fileToLoad = filesSelected[0];
+
+      var fileReader = new FileReader();
+
+      fileReader.onload = function(fileLoadedEvent) {
+        var srcData = fileLoadedEvent.target.result; // <--- data: base64
+        //console.log("Converted Base64 version is " + srcData);
+        var params = {
+              headers: {
+                param0: 'Accept:application/json',
+                param1:'  '
+              }
+            };
+
+            //console.log(fileToLoad.name)
+            var solution = srcData.split("base64,")[1];
+            //console.log(solution)
+
+            var body = JSON.stringify({"img": solution, "name":fileToLoad.name, "customlabels":labels});
+
+            var apigClient = apigClientFactory.newClient();
+            apigClient.uploadPost(params, body)
+            .then(function(result){
+              console.log('went to then')
+            }).catch( function(result){
+              console.log('went to catch')
+            });
+
+      }
+      fileReader.readAsDataURL(fileToLoad);
+    }
+  }
+</script>
+</html>
